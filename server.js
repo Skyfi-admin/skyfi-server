@@ -44,6 +44,28 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ✅ Add Customer API (admin use)
+app.post("/add-customer", async (req, res) => {
+  try {
+    const { username, password, plan } = req.body;
+
+    const newCustomer = new Customer({
+      username,
+      password,
+      plan
+    });
+
+    await newCustomer.save();
+
+    res.json({
+      message: "Customer added successfully",
+      customer: newCustomer
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ✅ Test route
 app.get("/", (req, res) => {
