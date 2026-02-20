@@ -66,12 +66,22 @@ app.post("/add-customer", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+const express = require("express");
+const app = express();
 
-// ✅ Test route
+app.use(express.json());
+
+// ✅ test route
 app.get("/", (req, res) => {
   res.send("SkyFi Server Running 🚀");
 });
 
+// ✅ customers API
+app.get("/customers", (req, res) => {
+  res.json([{ name: "Test User", plan: "30 Mbps" }]);
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("Server started on port " + PORT);
 });
