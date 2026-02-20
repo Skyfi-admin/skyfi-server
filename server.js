@@ -66,8 +66,6 @@ app.post("/add-customer", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-const express = require("express");
-const app = express();
 
 app.use(express.json());
 
