@@ -60,10 +60,26 @@ app.post("/login", async (req, res) => {
 
 // ===== Add Customer =====
 app.post("/addCustomer", async (req, res) => {
-  const newCustomer = new Customer(req.body);
-  await newCustomer.save();
+  try {
+    const newCustomer = new Customer({
+      username: req.body.username,
+      password: req.body.password,
+      plan: req.body.plan,
+      usage: req.body.usage,
+      limit: req.body.limit,
+      status: req.body.status,
+    });
 
-  res.json({ message: "Customer added", customer: newCustomer });
+    const savedCustomer = await newCustomer.save();
+
+    res.json({
+      message: "Customer added",
+      customer: savedCustomer,
+    });
+  } catch (err) {
+    console.error("Add customer error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 // ===== Reset Usage =====
