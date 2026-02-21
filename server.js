@@ -2,6 +2,7 @@
 
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -9,36 +10,42 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ===== MongoDB Connect =====
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("MongoDB Connected"))
+.catch((err) => console.error("MongoDB Error:", err.message));
+
+// ===== Customer Schema =====
+const customerSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+  plan: String,
+  usage: Number,
+  limit: Number,
+  status: String,
+});
+
+const Customer = mongoose.model("Customer", customerSchema);
+
 // ===== Root Test =====
 app.get("/", (req, res) => {
   res.send("SkyFi Server Running 🚀");
 });
 
-// ===== Sample In-Memory Data (temporary) =====
-let customers = [
-  {
-    id: 1,
-    username: "testuser",
-    password: "1234",
-    plan: "30 Mbps",
-    usage: 50,
-    limit: 200,
-    status: "Active",
-  },
-];
-
 // ===== Get All Customers =====
-app.get("/customers", (req, res) => {
+app.get("/customers", async (req, res) => {
+  const customers = await Customer.find();
   res.json(customers);
 });
 
 // ===== Customer Login =====
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  const user = customers.find(
-    (c) => c.username === username && c.password === password
-  );
+  const user = await Customer.findOne({ username, password });
 
   if (!user) {
     return res.status(401).json({ message: "Invalid credentials" });
@@ -51,39 +58,35 @@ app.post("/login", (req, res) => {
 });
 
 // ===== Add Customer =====
-app.post("/addCustomer", (req, res) => {
-  const newCustomer = {
-    id: customers.length + 1,
-    ...req.body,
-  };
+app.post("/addCustomer", async (req, res) => {
+  const newCustomer = new Customer(req.body);
+  await newCustomer.save();
 
-  customers.push(newCustomer);
   res.json({ message: "Customer added", customer: newCustomer });
 });
 
 // ===== Reset Usage =====
-app.post("/resetUsage/:id", (req, res) => {
-  const id = parseInt(req.params.id);
+app.post("/resetUsage/:id", async (req, res) => {
+  const customer = await Customer.findById(req.params.id);
 
-  const customer = customers.find((c) => c.id === id);
   if (!customer) {
     return res.status(404).json({ message: "Customer not found" });
   }
 
   customer.usage = 0;
+  await customer.save();
+
   res.json({ message: "Usage reset", customer });
 });
 
 // ===== Delete Customer =====
-app.delete("/deleteCustomer/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-
-  customers = customers.filter((c) => c.id !== id);
+app.delete("/deleteCustomer/:id", async (req, res) => {
+  await Customer.findByIdAndDelete(req.params.id);
   res.json({ message: "Customer deleted" });
 });
 
-// ===== Server Start =====
-const PORT = process.env.PORT || 3000;
+// ===== Start Server =====
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`SkyFi Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
