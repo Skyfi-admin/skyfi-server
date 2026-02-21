@@ -13,3 +13,11 @@
     "mikronode-ng": "^1.0.5"
   }
 }
+{
+  "username": "demo",
+  "password": "1234",
+  "plan": "30 Mbps",
+  "usage": 0,
+  "limit": 200,
+  "status": "Active"
+}
