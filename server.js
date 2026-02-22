@@ -1,27 +1,26 @@
-// ===== SkyFi ISP Server =====
-
 const express = require("express");
-const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
-
-// ===== Middleware =====
 app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
 
-// ===== MongoDB Connect =====
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("MongoDB Connected"))
-.catch((err) => console.error("MongoDB Error:", err.message));
+/* ===============================
+   🔗 MongoDB Connection
+=============================== */
 
-// ===== Customer Schema =====
-const mongoose = require("mongoose");
+const MONGO_URL = process.env.MONGO_URL || "YOUR_MONGODB_URL_HERE";
+
+mongoose.connect(MONGO_URL)
+.then(() => console.log("✅ MongoDB Connected"))
+.catch(err => console.log("❌ MongoDB Error:", err));
+
+
+/* ===============================
+   👤 Customer Schema
+=============================== */
 
 const customerSchema = new mongoose.Schema({
   username: {
@@ -53,73 +52,112 @@ const customerSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+/* 🔐 Auto hash password */
+customerSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
 const Customer = mongoose.model("Customer", customerSchema);
-module.exports = Customer;
-// ===== Root Test =====
+
+
+/* ===============================
+   🚀 Routes
+=============================== */
+
+/* ✅ Health check */
 app.get("/", (req, res) => {
-  res.send("SkyFi Server Running 🚀");
+  res.send("🚀 SkyFi Server Running");
 });
 
-// ===== Get All Customers =====
-app.get("/customers", async (req, res) => {
-  const customers = await Customer.find();
-  res.json(customers);
-});
 
-// ===== Customer Login =====
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-
-  const user = await Customer.findOne({ username, password });
-
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  res.json({
-    message: "Login successful",
-    user,
-  });
-});
-
-// ===== Add Customer =====
+/* ✅ Add Customer */
 app.post("/addCustomer", async (req, res) => {
   try {
-    const newCustomer = new Customer(req.body);
-    await newCustomer.save();
+    const { username, password, plan, limit } = req.body;
+
+    const customer = new Customer({
+      username,
+      password,
+      plan,
+      limit
+    });
+
+    await customer.save();
+    res.json({ message: "✅ Customer added" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/* ✅ Customer Login */
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const customer = await Customer.findOne({ username });
+    if (!customer) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const match = await bcrypt.compare(password, customer.password);
+    if (!match) {
+      return res.status(401).json({ message: "Wrong password" });
+    }
 
     res.json({
-      message: "Customer added",
-      customer: newCustomer,
+      message: "✅ Login success",
+      customer
     });
+
   } catch (err) {
-    console.error("Add customer error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ===== Reset Usage =====
+
+/* ✅ Get All Customers (Admin) */
+app.get("/customers", async (req, res) => {
+  try {
+    const customers = await Customer.find().sort({ createdAt: -1 });
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/* ✅ Reset Usage */
 app.post("/resetUsage/:id", async (req, res) => {
-  const customer = await Customer.findById(req.params.id);
-
-  if (!customer) {
-    return res.status(404).json({ message: "Customer not found" });
+  try {
+    await Customer.findByIdAndUpdate(req.params.id, { usage: 0 });
+    res.json({ message: "✅ Usage reset" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  customer.usage = 0;
-  await customer.save();
-
-  res.json({ message: "Usage reset", customer });
 });
 
-// ===== Delete Customer =====
+
+/* ✅ Delete Customer */
 app.delete("/deleteCustomer/:id", async (req, res) => {
-  await Customer.findByIdAndDelete(req.params.id);
-  res.json({ message: "Customer deleted" });
+  try {
+    await Customer.findByIdAndDelete(req.params.id);
+    res.json({ message: "✅ Customer deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ===== Start Server =====
+
+/* ===============================
+   🌐 Start Server
+=============================== */
+
 const PORT = process.env.PORT || 10000;
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
