@@ -62,20 +62,12 @@ app.post("/login", async (req, res) => {
 // ===== Add Customer =====
 app.post("/addCustomer", async (req, res) => {
   try {
-    const newCustomer = new Customer({
-      username: req.body.username,
-      password: req.body.password,
-      plan: req.body.plan,
-      usage: req.body.usage,
-      limit: req.body.limit,
-      status: req.body.status,
-    });
-
-    const savedCustomer = await newCustomer.save();
+    const newCustomer = new Customer(req.body);
+    await newCustomer.save();
 
     res.json({
       message: "Customer added",
-      customer: savedCustomer,
+      customer: newCustomer,
     });
   } catch (err) {
     console.error("Add customer error:", err);
