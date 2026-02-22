@@ -77,16 +77,20 @@ app.post("/addCustomer", async (req, res) => {
   try {
     const { username, password, plan, limit } = req.body;
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const customer = new Customer({
       username,
-      password,
+      password: hashedPassword,
       plan,
-      limit
+      limit,
+      usage: 0,
+      status: "active"
     });
 
     await customer.save();
-    res.json({ message: "✅ Customer added" });
 
+    res.json({ message: "✅ Customer added successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
