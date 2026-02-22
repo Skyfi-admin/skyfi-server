@@ -77,6 +77,10 @@ app.post("/addCustomer", async (req, res) => {
   try {
     const { username, password, plan, limit } = req.body;
 
+    if (!password) {
+      return res.status(400).json({ error: "Password missing in request" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const customer = new Customer({
