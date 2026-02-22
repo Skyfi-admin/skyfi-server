@@ -21,17 +21,40 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch((err) => console.error("MongoDB Error:", err.message));
 
 // ===== Customer Schema =====
+const mongoose = require("mongoose");
+
 const customerSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  password: { type: String, required: true },
-  plan: { type: String, required: true },
-  usage: { type: Number, default: 0 },
-  limit: { type: Number, default: 0 },
-  status: { type: String, default: "Active" },
-}, { strict: false });
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  plan: {
+    type: String,
+    required: true
+  },
+  usage: {
+    type: Number,
+    default: 0
+  },
+  limit: {
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ["active", "suspended"],
+    default: "active"
+  }
+}, { timestamps: true });
 
 const Customer = mongoose.model("Customer", customerSchema);
-
+module.exports = Customer;
 // ===== Root Test =====
 app.get("/", (req, res) => {
   res.send("SkyFi Server Running 🚀");
