@@ -21,13 +21,13 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // ===== Customer Schema =====
 const customerSchema = new mongoose.Schema({
-  username: String,
-  password: String,
-  plan: String,
-  usage: Number,
-  limit: Number,
-  status: String,
-});
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+  plan: { type: String, required: true },
+  usage: { type: Number, default: 0 },
+  limit: { type: Number, default: 0 },
+  status: { type: String, default: "Active" },
+}, { strict: false });
 
 const Customer = mongoose.model("Customer", customerSchema);
 
