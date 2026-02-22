@@ -5,6 +5,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const app = express();
+app.use(express.json());
 
 // ===== Middleware =====
 app.use(cors());
